@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "migrate": "drizzle-kit generate:pg --schema=./src/db/schema.ts && tsx ./src/db/migrate.ts"
+    "dev": "tsx watch --env-file=.env src/server.ts",
+    "migrate": "drizzle-kit generate:pg && tsx --env-file=.env ./src/db/migrate.ts",
+    "migrate:generate": "drizzle-kit generate:pg",
+    "migrate:push": "tsx --env-file=.env ./src/db/migrate.ts"
   },
   "type": "module",
   "keywords": [],
@@ -15,6 +17,7 @@
     "@tsconfig/node-lts": "^20.1.0",
     "@types/express": "^4.17.21",
     "@types/node": "^20.10.6",
+    "@types/pg": "^8.10.9",
     "@typescript-eslint/eslint-plugin": "^6.16.0",
     "@typescript-eslint/parser": "^6.16.0",
     "drizzle-kit": "^0.20.9",
@@ -26,7 +29,9 @@
   "dependencies": {
     "dotenv": "^16.3.1",
     "drizzle-orm": "^0.29.3",
+    "eslint-plugin-drizzle": "^0.2.3",
     "express": "^4.18.2",
+    "pg": "^8.11.3",
     "postgres": "^3.4.3"
   }
 }

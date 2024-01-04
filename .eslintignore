@@ -9,3 +9,5 @@ dev-data
 .eslintrc.cjs
 *.d.ts
 *.js
+tsconfig.json
+drizzle.config.ts
