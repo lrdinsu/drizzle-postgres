@@ -32,3 +32,6 @@ GET {{api}}/users/4/posts
 
 ### Get user posts and categories
 GET {{api}}/users/4/posts/1
+
+### Create new user (sign up)
+POST {{api}}/users/new/signup

@@ -2,7 +2,13 @@ import { and, eq, gt, gte, isNull, like, or } from 'drizzle-orm';
 import express, { Express } from 'express';
 
 import { db } from '@/db/index.js';
-import { posts, profiles, users } from '@/db/schema.js';
+import {
+  categories,
+  posts,
+  postsToCategories,
+  profiles,
+  users,
+} from '@/db/schema.js';
 import { insertUserSchema } from '@/types/schema.js';
 
 export const app: Express = express();
@@ -86,42 +92,6 @@ app.get('/api/v1/users/:id/profile', async (_, res) => {
       full_profiles: profiles2,
     },
   });
-});
-
-app.post('/api/v1/users', async (req, res) => {
-  try {
-    const newUser = insertUserSchema.parse(req.body);
-    const insertedUser = await db
-      .insert(users)
-      .values(newUser)
-      .returning({ insertedId: users.id });
-
-    const newId = insertedUser[0].insertedId;
-    await db.insert(profiles).values({
-      userId: newId,
-      bio: 'Hello world',
-    });
-
-    res.status(201).json({
-      status: 'success',
-      message: 'New user created',
-      data: {
-        newUser,
-      },
-    });
-  } catch (err) {
-    if (err instanceof Error) {
-      res.status(400).json({
-        status: 'fail',
-        message: err.message,
-      });
-      return;
-    }
-    res.status(400).json({
-      status: 'fail',
-      message: 'Invalid data',
-    });
-  }
 });
 
 app.get('/api/v1/users/:id/posts', async (req, res) => {
@@ -219,6 +189,149 @@ app.get('/api/v1/users/:id/posts/:postId', async (req, res) => {
     res.status(400).json({
       status: 'fail',
       message: 'Not found',
+    });
+  }
+});
+
+// POST
+app.post('/api/v1/users', async (req, res) => {
+  try {
+    const newUser = insertUserSchema.parse(req.body);
+    const insertedUser = await db
+      .insert(users)
+      .values(newUser)
+      .returning({ insertedId: users.id });
+
+    const newId = insertedUser[0].insertedId;
+    await db.insert(profiles).values({
+      userId: newId,
+      bio: 'Hello world',
+    });
+
+    res.status(201).json({
+      status: 'success',
+      message: 'New user created',
+      data: {
+        newUser,
+      },
+    });
+  } catch (err) {
+    if (err instanceof Error) {
+      res.status(400).json({
+        status: 'fail',
+        message: err.message,
+      });
+      return;
+    }
+    res.status(400).json({
+      status: 'fail',
+      message: 'Invalid data',
+    });
+  }
+});
+
+app.post('/api/v1/users/new/signup', async (_, res) => {
+  try {
+    const newUser = await db
+      .insert(users)
+      .values({
+        fullName: 'user 2',
+        address: 'address 2',
+        phone: '8888',
+        score: 50,
+      })
+      .returning({ userId: users.id });
+
+    const userId = newUser[0].userId;
+
+    // Add profiles (one to one)
+    await db.insert(profiles).values({
+      userId,
+      bio: 'I am programmer!',
+    });
+
+    // Add posts (one to many)
+    ['post1', 'post2', 'post3'].forEach(async (post) => {
+      await db.insert(posts).values({
+        text: post,
+        authorId: userId,
+      });
+    });
+
+    // Add categories (many to many)
+    const newCats = await db
+      .insert(categories)
+      .values([{ name: 'cat 1' }, { name: 'cat 2' }])
+      .returning({ catId: categories.id });
+
+    const newPosts = await db
+      .insert(posts)
+      .values([
+        {
+          authorId: userId,
+          text: 'post 4',
+        },
+        {
+          authorId: userId,
+          text: 'post 5',
+        },
+      ])
+      .returning({ postId: posts.id });
+
+    await db.insert(postsToCategories).values([
+      {
+        postId: newPosts[0].postId,
+        categoryId: newCats[0].catId,
+      },
+      {
+        postId: newPosts[0].postId,
+        categoryId: newCats[1].catId,
+      },
+      {
+        postId: newPosts[1].postId,
+        categoryId: newCats[0].catId,
+      },
+      {
+        postId: newPosts[1].postId,
+        categoryId: newCats[1].catId,
+      },
+    ]);
+
+    const result = await db.query.users.findMany({
+      where: eq(users.id, userId),
+      with: {
+        profile: true,
+        posts: {
+          with: {
+            postsToCategories: {
+              columns: {},
+              with: {
+                category: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    res.status(201).json({
+      status: 'success',
+      message: 'New user created',
+      data: {
+        result,
+      },
+    });
+  } catch (err) {
+    if (err instanceof Error) {
+      res.status(400).json({
+        status: 'fail',
+        message: err.message,
+      });
+      return;
+    }
+    res.status(400).json({
+      status: 'fail',
+      message: 'Invalid data',
     });
   }
 });
