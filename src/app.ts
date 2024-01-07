@@ -161,3 +161,64 @@ app.get('/api/v1/users/:id/posts', async (req, res) => {
     });
   }
 });
+
+app.get('/api/v1/users/:id/posts/:postId', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const postId = Number(req.params.postId);
+    if (!id || !postId) {
+      res.status(400).json({
+        status: 'fail',
+        message: 'Please provide a valid user id and post id',
+      });
+      return;
+    }
+
+    // const results = await db.query.users.findMany({
+    //   where: eq(users.id, id),
+    //   with: {
+    //     posts: {
+    //       where: eq(posts.id, postId),
+    //       with: {
+    //         postsToCategories: {
+    //           with: {
+    //             category: true,
+    //           },
+    //         },
+    //       },
+    //     },
+    //   },
+    // });
+
+    const results2 = await db.query.posts.findFirst({
+      with: {
+        author: true,
+        postsToCategories: {
+          columns: {
+            categoryId: false,
+            postId: false,
+          },
+          with: {
+            category: {
+              columns: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        results2,
+      },
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: 'fail',
+      message: 'Not found',
+    });
+  }
+});

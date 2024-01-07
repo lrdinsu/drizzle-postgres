@@ -29,3 +29,6 @@ Content-Type: application/json
 
 ### Get user posts
 GET {{api}}/users/4/posts
+
+### Get user posts and categories
+GET {{api}}/users/4/posts/1

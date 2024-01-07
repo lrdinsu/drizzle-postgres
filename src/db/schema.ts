@@ -1,5 +1,12 @@
 import { relations } from 'drizzle-orm';
-import { integer, pgTable, serial, text, varchar } from 'drizzle-orm/pg-core';
+import {
+  integer,
+  pgTable,
+  primaryKey,
+  serial,
+  text,
+  varchar,
+} from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
@@ -14,7 +21,7 @@ export const profiles = pgTable('profiles', {
   bio: varchar('bio', { length: 256 }),
   userId: integer('user_id')
     .notNull()
-    .references(() => users.id),
+    .references(() => users.id)
 });
 
 export const posts = pgTable('posts', {
@@ -22,23 +29,62 @@ export const posts = pgTable('posts', {
   text: varchar('text', { length: 256 }).notNull(),
   authorId: integer('author_id')
     .notNull()
-    .references(() => users.id),
+    .references(() => users.id)
 });
+
+export const categories = pgTable('categories', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 256 })
+});
+
+export const postsToCategories = pgTable(
+  'posts_to_categories',
+  {
+    postId: integer('post_id')
+      .notNull()
+      .references(() => posts.id),
+    categoryId: integer('category_id')
+      .notNull()
+      .references(() => categories.id)
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.postId, t.categoryId] })
+  })
+);
 
 export const usersRelations = relations(users, ({ one, many }) => ({
   profile: one(profiles, {
     fields: [users.id],
-    references: [profiles.userId],
+    references: [profiles.userId]
   }),
-  posts: many(posts),
+  posts: many(posts)
 }));
 
-export const postsRelations = relations(posts, ({ one }) => ({
+export const postsRelations = relations(posts, ({ one, many }) => ({
   author: one(users, {
     fields: [posts.authorId],
-    references: [users.id],
+    references: [users.id]
   }),
+  postsToCategories: many(postsToCategories)
 }));
+
+export const categoriesRelations = relations(categories, ({ many }) => ({
+  postsToCategories: many(postsToCategories)
+}));
+
+export const postsToCategoriesRelations = relations(
+  postsToCategories,
+  ({ one }) => ({
+    post: one(posts, {
+      fields: [postsToCategories.postId],
+      references: [posts.id]
+    }),
+    category: one(categories, {
+      fields: [postsToCategories.categoryId],
+      references: [categories.id]
+    })
+  })
+);
 
 
 // export const moodEnum = pgEnum('mood', ['sad', 'ok', 'happy']);
