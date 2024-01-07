@@ -1,2 +1,31 @@
-### Get user
+### Get users
 GET {{api}}/users
+
+### Get user by id
+GET {{api}}/users/2
+
+### Get profile
+GET {{api}}/users/9/profile
+
+### Create New user
+POST {{api}}/users
+Content-Type: application/json
+
+{
+  "phone": "2340",
+  "address": "567st"
+}
+
+### Create New user 2
+POST {{api}}/users
+Content-Type: application/json
+
+{
+  "fullName": "Ruperto Ranger",
+  "phone": "2340",
+  "address": "567st",
+  "score": 10
+}
+
+### Get user posts
+GET {{api}}/users/4/posts
